@@ -4,15 +4,20 @@ import sys
 from time import sleep
 from kafka import KafkaProducer
 
+from logService import LogService
+
 if __name__ == "__main__":
+
+	logger = LogService()
+	logger.turn_logging_on()
 
 	# kafka_ip = "localhost"
 	kafka_ip = "192.168.53.11"
 	kafka_port = "9092"
-	# kafka_ip = sys.argv[1]
-	# kafka_port = int(sys.argv[2])
 
-	kafka_topic = "test_topic"
+	logger.log("starting with kafka config: " + kafka_ip + ":" + str(kafka_port))
+
+	kafka_topic = "test"
 
 	kafka_sender = KafkaProducer(bootstap_server=[kafka_ip + ":" + str(kafka_port)],
 								 value_serializer=lambda x: json.dumps(x).encode('utf-8'))
@@ -35,6 +40,8 @@ if __name__ == "__main__":
 			required_data["n_tx"] = latest_block["n_tx"]
 
 			kafka_sender.send(kafka_topic, value=json.dumps(required_data))
+
+			logger.log(json.dumps(required_data))
 
 			last_stored_height = latest_height
 
