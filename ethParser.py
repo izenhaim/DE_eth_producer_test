@@ -38,6 +38,7 @@ if __name__ == "__main__":
 					required_data["n_tx"] = latest_block["n_tx"]
 
 					kafka_sender.send(kafka_topic, json.dumps(required_data).encode('utf-8'))
+					kafka_sender.flush()
 
 					logger.log(json.dumps(required_data))
 					last_stored_height = latest_height
