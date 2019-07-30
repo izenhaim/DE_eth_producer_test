@@ -20,7 +20,7 @@ class LogService:
 				print(str(message))
 			elif self.log_output == self.file_output:
 				with open(self.log_file_path, "a+") as file:
-					file.write(str(message) + "%d\r\n")
+					file.write(str(message) + "\r\n")
 
 	def set_log_output(self, output, file_path=""):
 		self.log_output = output

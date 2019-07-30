@@ -1,0 +1,6 @@
+kafka_btc_fees_topic = "btc-fees"
+kafka_eth_fees_topic = "eth-fees"
+kafka_btc_amounts_topic = "btc-amounts"
+kafka_eth_amounts_topic = "eth-amounts"
+kafka_btc_blocks_topic = "btc-fees"
+kafka_eth_blocks_topic = "eth-fees"

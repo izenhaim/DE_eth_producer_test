@@ -1,3 +1,5 @@
+import datetime
+
 import requests
 import json
 from time import sleep
@@ -5,12 +7,9 @@ from kafka import KafkaProducer
 
 from logService.logService import LogService
 
-#
-
 if __name__ == "__main__":
 
-	logger = LogService()
-	logger.turn_logging_on()
+	logger = LogService(is_logging_on=True, log_output=LogService.console_output, file_path="./ethParserLog")
 
 	# kafka_ip = "localhost"
 	kafka_ip = "192.168.53.11"
@@ -18,7 +17,8 @@ if __name__ == "__main__":
 
 	logger.log("starting with kafka config: " + kafka_ip + ":" + str(kafka_port))
 
-	kafka_topic = 'test'
+	kafka_store_topic = 'eth-blocks'
+	kafka_cleaned_topic = 'stats'
 
 	kafka_sender = KafkaProducer(bootstrap_servers=kafka_ip + ":" + str(kafka_port))
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
 		latest_height = int(eth_main_status["height"])
 
-		if latest_height > last_stored_height:
+		while latest_height > last_stored_height:
 			latest_block = json.loads(requests.get('https://api.blockcypher.com/v1/eth/main/blocks/' +
 												   str(latest_height)).content.decode('utf-8'))
 
@@ -39,11 +39,27 @@ if __name__ == "__main__":
 			required_data["total"] = latest_block["total"]
 			required_data["fees"] = latest_block["fees"]
 			required_data["n_tx"] = latest_block["n_tx"]
+			required_data["time"] = int(
+				datetime.datetime.strptime(latest_block["time"], "%Y-%m-%dT%H:%M:%SZ").timestamp())
 
-			kafka_sender.send(kafka_topic, json.dumps(required_data).encode('utf-8'))
+			kafka_sender.send(kafka_store_topic, json.dumps(required_data).encode('utf-8'))
 			kafka_sender.flush()
 
-			logger.log(json.dumps(required_data))
+			logger.log("put block " + str(latest_block["height"]) + " in kafka storage topic")
+
+			item = {"name": "eth.total", "value": latest_block["total"]}
+			kafka_sender.send(kafka_cleaned_topic, json.dumps(item).encode('utf-8'))
+
+			item = {"name": "eth.fees", "value": latest_block["fees"]}
+			kafka_sender.send(kafka_cleaned_topic, json.dumps(item).encode('utf-8'))
+
+			item = {"name": "eth.n_tx", "value": latest_block["n_tx"]}
+			kafka_sender.send(kafka_cleaned_topic, json.dumps(item).encode('utf-8'))
+
+			kafka_sender.flush()
+
+			logger.log("put block " + str(latest_block["height"]) + " in kafka stats topic")
+
 			last_stored_height = latest_height
 
 		sleep(5)
